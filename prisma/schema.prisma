@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("basico") // basico, profesional, enterprise
+  createdAt DateTime @default(now())
+  users     User[]
+  assets    Asset[]
+  findings  Finding[]
+  alertConfigs AlertConfig[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  name           String?
+  password       String?
+  role           String       @default("admin") // admin, viewer
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model Asset {
+  id             String       @id @default(cuid())
+  type           String       // domain, ip, email
+  value          String
+  status         String       @default("active") // active, paused, pending
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  scans          Scan[]
+  findings       Finding[]
+  createdAt      DateTime     @default(now())
+}
+
+model Scan {
+  id          String    @id @default(cuid())
+  assetId     String
+  asset       Asset     @relation(fields: [assetId], references: [id])
+  type        String    // port_scan, ssl_check, dns_check, email_breach
+  status      String    @default("pending") // pending, running, completed, failed
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  findings    Finding[]
+}
+
+model Finding {
+  id             String       @id @default(cuid())
+  title          String
+  description    String
+  severity       String       // critical, high, medium, low, info
+  cvssScore      Float
+  status         String       @default("open") // open, in_progress, resolved, false_positive
+  remediation    String?
+  cveId          String?
+  assetId        String
+  asset          Asset        @relation(fields: [assetId], references: [id])
+  scanId         String?
+  scan           Scan?        @relation(fields: [scanId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  detectedAt     DateTime     @default(now())
+  resolvedAt     DateTime?
+}
+
+model AlertConfig {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  type           String       // new_critical, cert_expiry, new_breach, weekly_digest
+  channel        String       @default("email") // email
+  enabled        Boolean      @default(true)
+  threshold      String?
+  createdAt      DateTime     @default(now())
+}
