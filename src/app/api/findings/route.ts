@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const orgId = (session.user as any).organizationId;
+  const orgId = session.organizationId;
   const { searchParams } = new URL(req.url);
   const severity = searchParams.get("severity");
   const status = searchParams.get("status");
@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const orgId = (session.user as any).organizationId;
+  const orgId = session.organizationId;
   const { id, status } = await req.json();
 
   const finding = await prisma.finding.findFirst({ where: { id, organizationId: orgId } });

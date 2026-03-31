@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
 // Stub scan engine - generates simulated findings
@@ -31,10 +31,10 @@ const SIMULATED_FINDINGS = [
 ];
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const orgId = (session.user as any).organizationId;
+  const orgId = session.organizationId;
   const { assetId } = await req.json();
 
   const asset = await prisma.asset.findFirst({

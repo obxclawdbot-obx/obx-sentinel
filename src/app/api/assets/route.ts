@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const orgId = (session.user as any).organizationId;
+  const orgId = session.organizationId;
   const assets = await prisma.asset.findMany({
     where: { organizationId: orgId },
     orderBy: { createdAt: "desc" },
@@ -16,10 +16,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const orgId = (session.user as any).organizationId;
+  const orgId = session.organizationId;
   const { type, value } = await req.json();
 
   if (!type || !value) {

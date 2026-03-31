@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -17,17 +16,26 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (result?.error) {
-      setError("Credenciales incorrectas");
-      setLoading(false);
-    } else {
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Error de autenticación");
+        setLoading(false);
+        return;
+      }
+
       router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError("Error de conexión");
+      setLoading(false);
     }
   };
 
@@ -83,12 +91,9 @@ export default function LoginPage() {
             {loading ? "Entrando..." : "Entrar"}
           </button>
 
-          <p className="text-center text-gray-500 text-sm mt-4">
-            ¿No tienes cuenta?{" "}
-            <Link href="/register" className="text-emerald-400 hover:underline">
-              Registrarse
-            </Link>
-          </p>
+          <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+            <p className="text-xs text-gray-500 text-center">Demo: admin@sentinel-demo.com / admin1234</p>
+          </div>
         </form>
       </div>
     </div>
