@@ -2,57 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
-
-const SIMULATED_FINDINGS = [
-  {
-    title: "Puerto SSH (22) expuesto a Internet",
-    description: "El servicio SSH está accesible desde Internet sin restricción de IP. Esto permite ataques de fuerza bruta.",
-    severity: "high",
-    cvssScore: 7.5,
-    remediation: "Restringir acceso SSH por IP mediante firewall. Usar autenticación por clave pública.",
-    cveId: null,
-  },
-  {
-    title: "Certificado SSL próximo a expirar",
-    description: "El certificado SSL expira en menos de 30 días.",
-    severity: "medium",
-    cvssScore: 5.0,
-    remediation: "Renovar el certificado SSL. Considerar usar Let's Encrypt con renovación automática.",
-    cveId: null,
-  },
-  {
-    title: "Registro SPF no configurado",
-    description: "El dominio no tiene registro SPF en DNS, permitiendo suplantación de emails.",
-    severity: "medium",
-    cvssScore: 5.3,
-    remediation: "Añadir registro TXT SPF en DNS.",
-    cveId: null,
-  },
-  {
-    title: "Cabecera X-Frame-Options ausente",
-    description: "La cabecera X-Frame-Options no está configurada, permitiendo ataques de clickjacking.",
-    severity: "low",
-    cvssScore: 4.3,
-    remediation: "Añadir cabecera X-Frame-Options: DENY o SAMEORIGIN.",
-    cveId: null,
-  },
-  {
-    title: "Versión de servidor expuesta",
-    description: "El servidor web revela su versión en las cabeceras HTTP.",
-    severity: "info",
-    cvssScore: 2.0,
-    remediation: "Configurar el servidor para no revelar la versión.",
-    cveId: null,
-  },
-  {
-    title: "CVE-2024-21762 - FortiOS Out-of-bound Write",
-    description: "Vulnerabilidad crítica de escritura fuera de límites en FortiOS SSL VPN.",
-    severity: "critical",
-    cvssScore: 9.8,
-    remediation: "Actualizar FortiOS a la última versión parcheada.",
-    cveId: "CVE-2024-21762",
-  },
-];
+import { scanSSL, scanDNS, scanPorts, scanHeaders } from "@/lib/scanners";
+import type { FindingData } from "@/lib/scanners";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -80,6 +31,81 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(scans);
 }
 
+async function runScanners(
+  asset: { id: string; type: string; value: string; organizationId: string },
+  scanId: string
+) {
+  const allFindings: FindingData[] = [];
+
+  try {
+    const scannerPromises: Promise<FindingData[]>[] = [];
+
+    if (asset.type === "domain") {
+      const domain = asset.value.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+      scannerPromises.push(scanSSL(domain));
+      scannerPromises.push(scanDNS(domain));
+      scannerPromises.push(scanPorts(domain));
+      scannerPromises.push(scanHeaders(`https://${domain}`));
+    } else if (asset.type === "ip") {
+      scannerPromises.push(scanPorts(asset.value));
+    }
+    // email type: skip for now (future: breach check)
+
+    const results = await Promise.all(scannerPromises);
+    for (const findings of results) {
+      allFindings.push(...findings);
+    }
+
+    // Save findings to DB
+    if (allFindings.length > 0) {
+      await Promise.all(
+        allFindings.map((f) =>
+          prisma.finding.create({
+            data: {
+              title: f.title,
+              description: f.description,
+              severity: f.severity,
+              cvssScore: f.cvssScore,
+              status: "open",
+              remediation: f.remediation,
+              cveId: f.cveId,
+              assetId: asset.id,
+              scanId: scanId,
+              organizationId: asset.organizationId,
+            },
+          })
+        )
+      );
+    }
+
+    // Mark scan as completed
+    await prisma.scan.update({
+      where: { id: scanId },
+      data: { status: "completed", completedAt: new Date() },
+    });
+  } catch (err: any) {
+    // Mark scan as failed
+    console.error(`Scan ${scanId} failed:`, err);
+    await prisma.scan.update({
+      where: { id: scanId },
+      data: { status: "failed", completedAt: new Date() },
+    });
+  }
+}
+
+function getScanType(assetType: string): string {
+  switch (assetType) {
+    case "domain":
+      return "full_scan";
+    case "ip":
+      return "port_scan";
+    case "email":
+      return "email_breach";
+    default:
+      return "full_scan";
+  }
+}
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -93,41 +119,45 @@ export async function POST(req: NextRequest) {
 
   if (!asset) return NextResponse.json({ error: "Activo no encontrado" }, { status: 404 });
 
-  // Create scan in "running" status
+  if (asset.type === "email") {
+    return NextResponse.json(
+      { message: "Escaneo de email no disponible aún. Próximamente: verificación de brechas." },
+      { status: 200 }
+    );
+  }
+
+  // Create scan record
   const scan = await prisma.scan.create({
     data: {
       assetId: asset.id,
-      type: asset.type === "domain" ? "dns_check" : asset.type === "ip" ? "port_scan" : "email_breach",
+      type: getScanType(asset.type),
       status: "running",
     },
     include: { asset: true },
   });
 
-  // Background: wait 2s, generate findings, mark complete
-  (async () => {
-    await new Promise((r) => setTimeout(r, 2000));
+  // Run scanners in background (non-blocking)
+  runScanners(
+    {
+      id: asset.id,
+      type: asset.type,
+      value: asset.value,
+      organizationId: orgId,
+    },
+    scan.id
+  );
 
-    const numFindings = Math.floor(Math.random() * 3) + 1;
-    const selectedFindings = [...SIMULATED_FINDINGS].sort(() => Math.random() - 0.5).slice(0, numFindings);
-
-    await Promise.all(
-      selectedFindings.map((f) =>
-        prisma.finding.create({
-          data: {
-            ...f,
-            assetId: asset.id,
-            scanId: scan.id,
-            organizationId: orgId,
-          },
-        })
-      )
-    );
-
-    await prisma.scan.update({
-      where: { id: scan.id },
-      data: { status: "completed", completedAt: new Date() },
-    });
-  })();
-
-  return NextResponse.json({ scan });
+  // Return 202 immediately
+  return NextResponse.json(
+    {
+      scan: {
+        id: scan.id,
+        status: "running",
+        type: scan.type,
+        asset: scan.asset,
+      },
+      message: "Escaneo iniciado. Los resultados estarán disponibles en unos segundos.",
+    },
+    { status: 202 }
+  );
 }
