@@ -6,7 +6,9 @@ const nav = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/assets", label: "Activos", icon: "🖥️" },
   { href: "/findings", label: "Hallazgos", icon: "🔍" },
+  { href: "/scans", label: "Escaneos", icon: "⚡" },
   { href: "/alerts", label: "Alertas", icon: "🔔" },
+  { href: "/settings", label: "Configuración", icon: "⚙️" },
 ];
 
 export default function Sidebar() {
