@@ -11,13 +11,34 @@ const nav = [
   { href: "/settings", label: "Configuración", icon: "⚙️" },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  plan?: string;
+}
+
+const planLabels: Record<string, string> = {
+  basico: "Básico",
+  profesional: "Profesional",
+  enterprise: "Enterprise",
+};
+
+const planColors: Record<string, string> = {
+  basico: "text-[#888] border-[#333]",
+  profesional: "text-[#00ff88] border-[#00ff88]",
+  enterprise: "text-[#f0f0f0] border-[#f0f0f0] bg-[#1a1a1a]",
+};
+
+export default function Sidebar({ plan }: SidebarProps) {
   const pathname = usePathname();
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-800">
-        <h1 className="text-xl font-bold">🛡️ OBX Sentinel</h1>
-        <p className="text-xs text-gray-400 mt-1">Ciberseguridad para pymes</p>
+    <aside className="w-64 bg-[#0a0a0a] border-r border-[#1a1a1a] text-white min-h-screen flex flex-col">
+      <div className="p-6 border-b border-[#1a1a1a]">
+        <h1 className="text-xl font-bold text-[#f0f0f0]">🛡️ OBX Sentinel</h1>
+        <p className="text-xs text-[#555] mt-1">Ciberseguridad para pymes</p>
+        {plan && (
+          <span className={`inline-flex mt-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded border ${planColors[plan] || planColors.basico}`}>
+            {planLabels[plan] || plan}
+          </span>
+        )}
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {nav.map((item) => (
@@ -26,8 +47,8 @@ export default function Sidebar() {
             href={item.href}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
               pathname === item.href
-                ? "bg-blue-600 text-white"
-                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                ? "bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20"
+                : "text-[#888] hover:bg-[#111] hover:text-[#f0f0f0] border border-transparent"
             }`}
           >
             <span>{item.icon}</span>
@@ -35,12 +56,12 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-[#1a1a1a]">
         <button
           onClick={() => fetch("/api/auth/signout", { method: "POST" }).then(() => window.location.href = "/login")}
-          className="text-sm text-gray-400 hover:text-white transition-colors"
+          className="text-sm text-[#555] hover:text-[#f0f0f0] transition-colors"
         >
-          Cerrar sesión
+          ↩ Cerrar sesión
         </button>
       </div>
     </aside>

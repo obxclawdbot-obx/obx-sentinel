@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { calculateSecurityScore } from "@/lib/plans";
 
 export async function GET() {
   const session = await getSession();
@@ -9,7 +10,7 @@ export async function GET() {
 
   const orgId = session.organizationId;
 
-  const [totalAssets, totalFindings, findingsBySeverity, findingsByStatus, recentFindings] = await Promise.all([
+  const [totalAssets, totalFindings, findingsBySeverity, findingsByStatus, recentFindings, allFindings, org] = await Promise.all([
     prisma.asset.count({ where: { organizationId: orgId } }),
     prisma.finding.count({ where: { organizationId: orgId } }),
     prisma.finding.groupBy({
@@ -28,19 +29,21 @@ export async function GET() {
       orderBy: { detectedAt: "desc" },
       take: 5,
     }),
+    prisma.finding.findMany({
+      where: { organizationId: orgId, status: { in: ["open", "in_progress"] } },
+      select: { severity: true },
+    }),
+    prisma.organization.findUnique({ where: { id: orgId }, select: { plan: true } }),
   ]);
 
   const openFindings = findingsByStatus.find((f: any) => f.status === "open")?._count || 0;
   const criticalFindings = findingsBySeverity.find((f: any) => f.severity === "critical")?._count || 0;
   const highFindings = findingsBySeverity.find((f: any) => f.severity === "high")?._count || 0;
 
-  const score = Math.max(
-    0,
-    100 - criticalFindings * 20 - highFindings * 10 -
-    (findingsBySeverity.find((f: any) => f.severity === "medium")?._count || 0) * 5
-  );
+  // Calculate security score using the proper formula
+  const score = calculateSecurityScore(allFindings);
 
-  // Mock SSL expirations
+  // Mock SSL expirations (in production these would come from real scan data)
   const sslExpirations = [
     { domain: "ofimatic.com", expiresAt: new Date(Date.now() + 12 * 86400000).toISOString(), daysLeft: 12 },
     { domain: "laboralcheck.es", expiresAt: new Date(Date.now() + 28 * 86400000).toISOString(), daysLeft: 28 },
@@ -54,6 +57,7 @@ export async function GET() {
     criticalFindings,
     highFindings,
     score,
+    plan: org?.plan || "basico",
     findingsBySeverity: findingsBySeverity.map((f: any) => ({ severity: f.severity, count: f._count })),
     findingsByStatus: findingsByStatus.map((f: any) => ({ status: f.status, count: f._count })),
     recentFindings: recentFindings.map((f: any) => ({

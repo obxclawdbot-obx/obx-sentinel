@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { scanSSL, scanDNS, scanPorts, scanHeaders } from "@/lib/scanners";
 import type { FindingData } from "@/lib/scanners";
+import { getPlanConfig } from "@/lib/plans";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -33,7 +34,8 @@ export async function GET(req: NextRequest) {
 
 async function runScanners(
   asset: { id: string; type: string; value: string; organizationId: string },
-  scanId: string
+  scanId: string,
+  allowedScanners: string[]
 ) {
   const allFindings: FindingData[] = [];
 
@@ -42,14 +44,25 @@ async function runScanners(
 
     if (asset.type === "domain") {
       const domain = asset.value.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-      scannerPromises.push(scanSSL(domain));
-      scannerPromises.push(scanDNS(domain));
-      scannerPromises.push(scanPorts(domain));
-      scannerPromises.push(scanHeaders(`https://${domain}`));
+      
+      // Only run allowed scanners
+      if (allowedScanners.includes("ssl_check")) {
+        scannerPromises.push(scanSSL(domain));
+      }
+      if (allowedScanners.includes("dns_check")) {
+        scannerPromises.push(scanDNS(domain));
+      }
+      if (allowedScanners.includes("port_scan")) {
+        scannerPromises.push(scanPorts(domain));
+      }
+      if (allowedScanners.includes("header_check")) {
+        scannerPromises.push(scanHeaders(`https://${domain}`));
+      }
     } else if (asset.type === "ip") {
-      scannerPromises.push(scanPorts(asset.value));
+      if (allowedScanners.includes("port_scan")) {
+        scannerPromises.push(scanPorts(asset.value));
+      }
     }
-    // email type: skip for now (future: breach check)
 
     const results = await Promise.all(scannerPromises);
     for (const findings of results) {
@@ -84,7 +97,6 @@ async function runScanners(
       data: { status: "completed", completedAt: new Date() },
     });
   } catch (err: any) {
-    // Mark scan as failed
     console.error(`Scan ${scanId} failed:`, err);
     await prisma.scan.update({
       where: { id: scanId },
@@ -126,6 +138,48 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Plan gating: check scan frequency
+  const org = await prisma.organization.findUnique({ where: { id: orgId } });
+  const planConfig = getPlanConfig(org?.plan || "basico");
+
+  // Check scan cooldown / frequency
+  if (planConfig.scanCooldownMs > 0) {
+    const cutoff = new Date(Date.now() - planConfig.scanCooldownMs);
+    const recentScans = await prisma.scan.count({
+      where: {
+        asset: { organizationId: orgId },
+        startedAt: { gte: cutoff },
+      },
+    });
+    if (recentScans >= planConfig.maxScansPerDay) {
+      return NextResponse.json(
+        {
+          error: `Has alcanzado el límite de escaneos del plan ${planConfig.label}. Mejora tu plan para escanear con más frecuencia.`,
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+  } else if (planConfig.maxScansPerDay !== Infinity) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayScans = await prisma.scan.count({
+      where: {
+        asset: { organizationId: orgId },
+        startedAt: { gte: todayStart },
+      },
+    });
+    if (todayScans >= planConfig.maxScansPerDay) {
+      return NextResponse.json(
+        {
+          error: `Has alcanzado el límite de ${planConfig.maxScansPerDay} escaneos/día del plan ${planConfig.label}. Mejora tu plan para más escaneos.`,
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+  }
+
   // Create scan record
   const scan = await prisma.scan.create({
     data: {
@@ -136,7 +190,7 @@ export async function POST(req: NextRequest) {
     include: { asset: true },
   });
 
-  // Run scanners in background (non-blocking)
+  // Run scanners in background with plan-allowed scanners
   runScanners(
     {
       id: asset.id,
@@ -144,7 +198,8 @@ export async function POST(req: NextRequest) {
       value: asset.value,
       organizationId: orgId,
     },
-    scan.id
+    scan.id,
+    planConfig.allowedScanners
   );
 
   // Return 202 immediately

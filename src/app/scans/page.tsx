@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import UpgradePrompt from "@/components/UpgradePrompt";
 
 interface Asset {
   id: string;
@@ -23,14 +24,16 @@ const typeLabels: Record<string, string> = {
   port_scan: "Escaneo de puertos",
   ssl_check: "Verificación SSL",
   dns_check: "Análisis DNS",
+  header_check: "Análisis headers",
+  full_scan: "Escaneo completo",
   email_breach: "Búsqueda de brechas",
 };
 
 const statusStyles: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-700",
-  running: "bg-blue-100 text-blue-700 animate-pulse",
-  completed: "bg-green-100 text-green-700",
-  failed: "bg-red-100 text-red-700",
+  pending: "bg-[#222] text-[#888] border border-[#333]",
+  running: "bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20 animate-pulse",
+  completed: "bg-green-500/10 text-green-500 border border-green-500/20",
+  failed: "bg-red-500/10 text-red-500 border border-red-500/20",
 };
 
 const statusLabels: Record<string, string> = {
@@ -46,7 +49,8 @@ export default function ScansPage() {
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState("");
   const [launching, setLaunching] = useState(false);
-  const [pollingIds, setPollingIds] = useState<Set<string>>(new Set());
+  const [planError, setPlanError] = useState("");
+  const [plan, setPlan] = useState("");
 
   const fetchScans = () =>
     fetch("/api/scan").then((r) => r.json()).then(setScans).catch(console.error);
@@ -64,28 +68,27 @@ export default function ScansPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Poll running scans
   useEffect(() => {
     const running = scans.filter((s) => s.status === "running");
     if (running.length === 0) return;
-
-    const interval = setInterval(() => {
-      fetchScans();
-    }, 2000);
-
+    const interval = setInterval(() => { fetchScans(); }, 2000);
     return () => clearInterval(interval);
   }, [scans]);
 
   const launchScan = async () => {
     if (!selectedAsset) return;
     setLaunching(true);
+    setPlanError("");
     try {
       const res = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assetId: selectedAsset }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (!res.ok && data.upgradeRequired) {
+        setPlanError(data.error);
+      } else if (res.ok || res.status === 202) {
         await fetchScans();
       }
     } catch (e) {
@@ -96,23 +99,29 @@ export default function ScansPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-8 bg-gray-50">
+    <div className="flex min-h-screen bg-[#0a0a0a]">
+      <Sidebar plan={plan} />
+      <main className="flex-1 p-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Motor de Escaneo</h1>
+          <h1 className="text-2xl font-bold text-[#f0f0f0]">Motor de Escaneo</h1>
         </div>
 
+        {planError && (
+          <div className="mb-6">
+            <UpgradePrompt message={planError} currentPlan={plan} />
+          </div>
+        )}
+
         {/* Launch scan */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Lanzar escaneo</h2>
+        <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Lanzar escaneo</h2>
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Activo objetivo</label>
+              <label className="block text-sm font-medium text-[#888] mb-1">Activo objetivo</label>
               <select
                 value={selectedAsset}
                 onChange={(e) => setSelectedAsset(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 bg-white"
+                className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88]"
               >
                 <option value="">Seleccionar activo...</option>
                 {assets.map((a) => (
@@ -125,7 +134,7 @@ export default function ScansPage() {
             <button
               onClick={launchScan}
               disabled={!selectedAsset || launching}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 bg-[#00ff88] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#00e07a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               {launching ? "Lanzando..." : "⚡ Lanzar escaneo"}
             </button>
@@ -133,17 +142,17 @@ export default function ScansPage() {
         </div>
 
         {/* Scan history */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">Historial de escaneos</h2>
+        <div className="bg-[#181818] border border-[#222] rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-[#222]">
+            <h2 className="text-lg font-semibold text-[#f0f0f0]">Historial de escaneos</h2>
           </div>
           {loading ? (
-            <div className="p-6 text-gray-500 animate-pulse">Cargando...</div>
+            <div className="p-6 text-[#888] animate-pulse">Cargando...</div>
           ) : scans.length === 0 ? (
-            <div className="p-6 text-gray-500">No hay escaneos registrados. Lanza el primero.</div>
+            <div className="p-6 text-[#888]">No hay escaneos registrados. Lanza el primero.</div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+              <thead className="text-xs text-[#888] uppercase tracking-wider border-b border-[#222]">
                 <tr>
                   <th className="px-6 py-3 text-left">Activo</th>
                   <th className="px-6 py-3 text-left">Tipo</th>
@@ -152,13 +161,13 @@ export default function ScansPage() {
                   <th className="px-6 py-3 text-left">Fecha</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-[#1a1a1a]">
                 {scans.map((scan) => (
-                  <tr key={scan.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                  <tr key={scan.id} className="hover:bg-[#1a1a1a] transition-colors">
+                    <td className="px-6 py-4 text-sm text-[#f0f0f0] font-mono">
                       {scan.asset?.value || "—"}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-[#888]">
                       {typeLabels[scan.type] || scan.type}
                     </td>
                     <td className="px-6 py-4">
@@ -166,10 +175,10 @@ export default function ScansPage() {
                         {statusLabels[scan.status] || scan.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-[#888] font-mono">
                       {scan.status === "running" ? "..." : scan._count?.findings ?? 0}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-[#888]">
                       {new Date(scan.startedAt).toLocaleString("es-ES")}
                     </td>
                   </tr>

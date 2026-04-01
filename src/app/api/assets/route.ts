@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { getPlanConfig } from "@/lib/plans";
 
 export async function GET() {
   const session = await getSession();
@@ -26,6 +27,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Tipo y valor son obligatorios" }, { status: 400 });
   }
 
+  // Plan gating: check max assets
+  const org = await prisma.organization.findUnique({ where: { id: orgId } });
+  const planConfig = getPlanConfig(org?.plan || "basico");
+  
+  const currentCount = await prisma.asset.count({ where: { organizationId: orgId } });
+  if (currentCount >= planConfig.maxAssets) {
+    return NextResponse.json(
+      { 
+        error: `Has alcanzado el límite de ${planConfig.maxAssets} activos del plan ${planConfig.label}. Mejora tu plan para añadir más.`,
+        upgradeRequired: true,
+      },
+      { status: 403 }
+    );
+  }
+
   const asset = await prisma.asset.create({
     data: { type, value, status: "active", organizationId: orgId },
   });
@@ -47,8 +63,8 @@ export async function DELETE(req: NextRequest) {
   });
   if (!asset) return NextResponse.json({ error: "Activo no encontrado" }, { status: 404 });
 
-  // Delete related scans and findings first
-  await prisma.finding.deleteMany({ where: { scan: { assetId: id } } });
+  // Delete related findings and scans first
+  await prisma.finding.deleteMany({ where: { assetId: id } });
   await prisma.scan.deleteMany({ where: { assetId: id } });
   await prisma.asset.delete({ where: { id } });
 

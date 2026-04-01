@@ -9,11 +9,11 @@ interface AlertConfig {
   enabled: boolean;
 }
 
-const alertLabels: Record<string, { title: string; desc: string }> = {
-  new_critical: { title: "Hallazgo crítico", desc: "Notificar cuando se detecte una vulnerabilidad crítica (CVSS ≥ 9.0)" },
-  cert_expiry: { title: "Certificado SSL expirando", desc: "Avisar 30 días antes de que expire un certificado SSL" },
-  new_breach: { title: "Credenciales filtradas", desc: "Alertar si se detectan emails corporativos en bases de datos filtradas" },
-  weekly_digest: { title: "Resumen semanal", desc: "Informe semanal con el estado de todos los activos y hallazgos" },
+const alertLabels: Record<string, { title: string; desc: string; icon: string }> = {
+  new_critical: { title: "Hallazgo crítico", desc: "Notificar cuando se detecte una vulnerabilidad crítica (CVSS ≥ 9.0)", icon: "🔴" },
+  cert_expiry: { title: "Certificado SSL expirando", desc: "Avisar 30 días antes de que expire un certificado SSL", icon: "🔐" },
+  new_breach: { title: "Credenciales filtradas", desc: "Alertar si se detectan emails corporativos en bases de datos filtradas", icon: "💀" },
+  weekly_digest: { title: "Resumen semanal", desc: "Informe semanal con el estado de todos los activos y hallazgos", icon: "📋" },
 };
 
 export default function AlertsPage() {
@@ -34,28 +34,31 @@ export default function AlertsPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar />
-      <main className="flex-1 p-8 bg-gray-50">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Configuración de alertas</h1>
+      <main className="flex-1 p-8">
+        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6">Configuración de alertas</h1>
         {loading ? (
-          <div className="animate-pulse text-gray-500">Cargando alertas...</div>
+          <div className="animate-pulse text-[#888]">Cargando alertas...</div>
         ) : (
           <div className="space-y-4">
             {alerts.map(a => {
-              const info = alertLabels[a.type] || { title: a.type, desc: "" };
+              const info = alertLabels[a.type] || { title: a.type, desc: "", icon: "🔔" };
               return (
-                <div key={a.id} className="bg-white rounded-xl shadow-sm border p-6 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{info.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{info.desc}</p>
-                    <p className="text-xs text-gray-400 mt-2">Canal: {a.channel}</p>
+                <div key={a.id} className="bg-[#181818] border border-[#222] rounded-2xl p-6 flex items-center justify-between">
+                  <div className="flex items-start gap-4">
+                    <span className="text-2xl">{info.icon}</span>
+                    <div>
+                      <h3 className="font-medium text-[#f0f0f0]">{info.title}</h3>
+                      <p className="text-sm text-[#888] mt-1">{info.desc}</p>
+                      <p className="text-xs text-[#555] mt-2">Canal: {a.channel}</p>
+                    </div>
                   </div>
                   <button
                     onClick={() => toggle(a.id, !a.enabled)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${a.enabled ? "bg-blue-600" : "bg-gray-300"}`}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${a.enabled ? "bg-[#00ff88]" : "bg-[#333]"}`}
                   >
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${a.enabled ? "left-6" : "left-0.5"}`} />
+                    <span className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-transform ${a.enabled ? "bg-[#0a0a0a] left-6" : "bg-[#888] left-0.5"}`} />
                   </button>
                 </div>
               );

@@ -16,18 +16,18 @@ interface Finding {
 }
 
 const severityBadge: Record<string, string> = {
-  critical: "bg-red-100 text-red-700 border-red-200",
-  high: "bg-orange-100 text-orange-700 border-orange-200",
-  medium: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  low: "bg-blue-100 text-blue-700 border-blue-200",
-  info: "bg-gray-100 text-gray-600 border-gray-200",
+  critical: "bg-red-500/10 text-red-500 border-red-500/20",
+  high: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  medium: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  low: "bg-green-500/10 text-green-500 border-green-500/20",
+  info: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
 const statusBadge: Record<string, string> = {
-  open: "bg-red-50 text-red-600",
-  in_progress: "bg-yellow-50 text-yellow-600",
-  resolved: "bg-green-50 text-green-600",
-  false_positive: "bg-gray-50 text-gray-500",
+  open: "bg-red-500/10 text-red-500",
+  in_progress: "bg-yellow-500/10 text-yellow-500",
+  resolved: "bg-green-500/10 text-green-500",
+  false_positive: "bg-[#222] text-[#888]",
 };
 
 const statusLabel: Record<string, string> = {
@@ -62,14 +62,14 @@ export default function FindingsPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar />
-      <main className="flex-1 p-8 bg-gray-50">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Hallazgos de seguridad</h1>
+      <main className="flex-1 p-8">
+        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6">Hallazgos de seguridad</h1>
 
         {/* Filters */}
         <div className="flex gap-4 mb-6">
-          <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="border rounded-lg px-3 py-2 text-sm text-gray-700 bg-white">
+          <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="bg-[#111] border border-[#333] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88]">
             <option value="">Todas las severidades</option>
             <option value="critical">Crítica</option>
             <option value="high">Alta</option>
@@ -77,58 +77,58 @@ export default function FindingsPage() {
             <option value="low">Baja</option>
             <option value="info">Info</option>
           </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm text-gray-700 bg-white">
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-[#111] border border-[#333] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88]">
             <option value="">Todos los estados</option>
             <option value="open">Abierto</option>
             <option value="in_progress">En progreso</option>
             <option value="resolved">Resuelto</option>
             <option value="false_positive">Falso positivo</option>
           </select>
-          <span className="text-sm text-gray-500 self-center">{findings.length} hallazgos</span>
+          <span className="text-sm text-[#888] self-center font-mono">{findings.length} hallazgos</span>
         </div>
 
         {loading ? (
-          <div className="animate-pulse text-gray-500">Cargando hallazgos...</div>
+          <div className="animate-pulse text-[#888]">Cargando hallazgos...</div>
         ) : findings.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border p-12 text-center text-gray-500">
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-12 text-center text-[#888]">
             No se encontraron hallazgos con los filtros seleccionados.
           </div>
         ) : (
           <div className="space-y-3">
             {findings.map(f => (
-              <div key={f.id} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <div className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-gray-50" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
+              <div key={f.id} className="bg-[#181818] border border-[#222] rounded-2xl overflow-hidden">
+                <div className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
                   <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${severityBadge[f.severity]}`}>
-                    {f.severity.toUpperCase()} {f.cvssScore.toFixed(1)}
+                    {f.severity.toUpperCase()} <span className="font-mono ml-1">{f.cvssScore.toFixed(1)}</span>
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{f.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{f.asset.value} · {f.cveId || "Sin CVE"}</p>
+                    <p className="text-sm font-medium text-[#f0f0f0] truncate">{f.title}</p>
+                    <p className="text-xs text-[#888] mt-0.5"><span className="font-mono">{f.asset.value}</span> · {f.cveId || "Sin CVE"}</p>
                   </div>
                   <span className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${statusBadge[f.status]}`}>
                     {statusLabel[f.status]}
                   </span>
-                  <span className="text-xs text-gray-400">{new Date(f.detectedAt).toLocaleDateString("es-ES")}</span>
-                  <span className="text-gray-400">{expanded === f.id ? "▲" : "▼"}</span>
+                  <span className="text-xs text-[#555]">{new Date(f.detectedAt).toLocaleDateString("es-ES")}</span>
+                  <span className="text-[#555]">{expanded === f.id ? "▲" : "▼"}</span>
                 </div>
                 {expanded === f.id && (
-                  <div className="px-6 py-4 border-t bg-gray-50">
-                    <p className="text-sm text-gray-700 mb-3">{f.description}</p>
+                  <div className="px-6 py-4 border-t border-[#222] bg-[#111]">
+                    <p className="text-sm text-[#888] mb-3">{f.description}</p>
                     {f.remediation && (
                       <div className="mb-3">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">REMEDIACIÓN</p>
-                        <p className="text-sm text-gray-700">{f.remediation}</p>
+                        <p className="text-xs font-semibold text-[#555] mb-1 uppercase tracking-wider">Remediación</p>
+                        <p className="text-sm text-[#888]">{f.remediation}</p>
                       </div>
                     )}
                     <div className="flex gap-2">
                       {f.status === "open" && (
                         <>
-                          <button onClick={() => updateStatus(f.id, "in_progress")} className="px-3 py-1.5 text-xs bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Marcar en progreso</button>
-                          <button onClick={() => updateStatus(f.id, "false_positive")} className="px-3 py-1.5 text-xs bg-gray-500 text-white rounded-lg hover:bg-gray-600">Falso positivo</button>
+                          <button onClick={() => updateStatus(f.id, "in_progress")} className="px-3 py-1.5 text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg hover:bg-yellow-500/20 transition-colors">Marcar en progreso</button>
+                          <button onClick={() => updateStatus(f.id, "false_positive")} className="px-3 py-1.5 text-xs bg-[#222] text-[#888] border border-[#333] rounded-lg hover:bg-[#2a2a2a] transition-colors">Falso positivo</button>
                         </>
                       )}
                       {f.status === "in_progress" && (
-                        <button onClick={() => updateStatus(f.id, "resolved")} className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700">Marcar resuelto</button>
+                        <button onClick={() => updateStatus(f.id, "resolved")} className="px-3 py-1.5 text-xs bg-green-500/10 text-green-500 border border-green-500/20 rounded-lg hover:bg-green-500/20 transition-colors">Marcar resuelto</button>
                       )}
                     </div>
                   </div>
