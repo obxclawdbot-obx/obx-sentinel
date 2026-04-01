@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import FaqItem from "./components/FaqItem";
 
 const features = [
@@ -57,7 +58,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 bg-[#060606]/[0.92] backdrop-blur-xl border-b border-[#1a1a1a]">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🛡️</span>
+            <Image src="/obx-logo.jpg" alt="OBX" width={32} height={32} className="rounded-md" />
             <span className="text-lg font-semibold">OBX <span className="text-[#00ff88]">Sentinel</span></span>
           </div>
           <div className="hidden sm:flex items-center gap-8">
@@ -210,9 +211,12 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-[#1a1a1a] px-4 sm:px-8 py-8 sm:py-10 text-center">
-        <p className="text-[13px] text-[#666666]">
-          Un producto de <span className="text-[#bbbbbb]">OBX AI Studio</span> · © 2026
-        </p>
+        <div className="flex items-center justify-center gap-2">
+          <Image src="/obx-logo.jpg" alt="OBX" width={20} height={20} className="rounded-sm" />
+          <p className="text-[13px] text-[#666666]">
+            Un producto de <span className="text-[#bbbbbb]">OBX AI Studio</span> · © 2026
+          </p>
+        </div>
         <div className="flex justify-center gap-6 mt-3">
           <a href="#funciones" className="text-[13px] text-[#666666] hover:text-[#bbbbbb]">Funciones</a>
           <a href="#precios" className="text-[13px] text-[#666666] hover:text-[#bbbbbb]">Precios</a>
