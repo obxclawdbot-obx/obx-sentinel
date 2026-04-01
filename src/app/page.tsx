@@ -52,40 +52,22 @@ const faqs = [
 
 export default function LandingPage() {
   return (
-    <div style={{ backgroundColor: "#060606", color: "#f0f0f0", minHeight: "100vh" }}>
+    <div className="bg-[#060606] text-[#f0f0f0] min-h-screen">
       {/* Nav */}
-      <nav
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          backgroundColor: "rgba(6,6,6,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid #1a1a1a",
-        }}
-      >
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "24px" }}>🛡️</span>
-            <span style={{ fontSize: "18px", fontWeight: 600, color: "#f0f0f0" }}>OBX <span style={{ color: "#00ff88" }}>Sentinel</span></span>
+      <nav className="sticky top-0 z-50 bg-[#060606]/[0.92] backdrop-blur-xl border-b border-[#1a1a1a]">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🛡️</span>
+            <span className="text-lg font-semibold">OBX <span className="text-[#00ff88]">Sentinel</span></span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
-            <a href="#funciones" style={{ fontSize: "14px", color: "#bbbbbb", textDecoration: "none" }}>Funciones</a>
-            <a href="#precios" style={{ fontSize: "14px", color: "#bbbbbb", textDecoration: "none" }}>Precios</a>
-            <a href="#faq" style={{ fontSize: "14px", color: "#bbbbbb", textDecoration: "none" }}>FAQ</a>
+          <div className="hidden sm:flex items-center gap-8">
+            <a href="#funciones" className="text-sm text-[#bbbbbb] hover:text-[#00ff88] transition-colors">Funciones</a>
+            <a href="#precios" className="text-sm text-[#bbbbbb] hover:text-[#00ff88] transition-colors">Precios</a>
+            <a href="#faq" className="text-sm text-[#bbbbbb] hover:text-[#00ff88] transition-colors">FAQ</a>
           </div>
           <Link
             href="/login"
-            style={{
-              padding: "8px 20px",
-              backgroundColor: "transparent",
-              color: "#00ff88",
-              border: "1px solid #00ff88",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: 500,
-              textDecoration: "none",
-            }}
+            className="px-4 sm:px-5 py-2 border border-[#00ff88] text-[#00ff88] rounded-md text-sm font-medium hover:bg-[#00ff88] hover:text-[#060606] transition-colors"
           >
             Acceder
           </Link>
@@ -93,26 +75,17 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section style={{ padding: "100px 32px 60px", textAlign: "center" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          <h1 style={{ fontSize: "30.4px", fontWeight: 300, lineHeight: 1.4, marginBottom: "20px", color: "#f0f0f0" }}>
-            Monitoriza la <span style={{ color: "#00ff88" }}>superficie de ataque</span> de tu empresa
+      <section className="px-4 sm:px-8 pt-16 sm:pt-24 pb-12 sm:pb-16 text-center">
+        <div className="max-w-[800px] mx-auto">
+          <h1 className="text-2xl sm:text-[30.4px] font-light leading-snug mb-5">
+            Monitoriza la <span className="text-[#00ff88]">superficie de ataque</span> de tu empresa
           </h1>
-          <p style={{ fontSize: "17px", color: "#bbbbbb", lineHeight: 1.7, marginBottom: "36px", maxWidth: "640px", marginLeft: "auto", marginRight: "auto" }}>
+          <p className="text-base sm:text-[17px] text-[#bbbbbb] leading-relaxed mb-8 sm:mb-9 max-w-[640px] mx-auto">
             Detectamos vulnerabilidades, puertos expuestos, certificados caducados y credenciales filtradas. Antes de que lo hagan los atacantes.
           </p>
           <Link
             href="/register"
-            style={{
-              display: "inline-block",
-              padding: "14px 36px",
-              backgroundColor: "#00ff88",
-              color: "#060606",
-              borderRadius: "10px",
-              fontSize: "16px",
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
+            className="inline-block px-8 sm:px-9 py-3.5 bg-[#00ff88] text-[#060606] rounded-xl text-base font-semibold hover:bg-[#00e07a] transition-colors"
           >
             Empieza gratis →
           </Link>
@@ -120,8 +93,8 @@ export default function LandingPage() {
       </section>
 
       {/* Stats */}
-      <section style={{ borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "40px 32px" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", textAlign: "center" }}>
+      <section className="border-t border-b border-[#1a1a1a] px-4 sm:px-8 py-8 sm:py-10">
+        <div className="max-w-[1100px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
           {[
             { value: "4", label: "scanners" },
             { value: "24/7", label: "monitorización" },
@@ -129,36 +102,31 @@ export default function LandingPage() {
             { value: "CVSS", label: "scoring" },
           ].map((s) => (
             <div key={s.label}>
-              <p style={{ fontSize: "28px", fontWeight: 600, color: "#00ff88" }}>{s.value}</p>
-              <p style={{ fontSize: "13px", color: "#666666", marginTop: "4px" }}>{s.label}</p>
+              <p className="text-2xl sm:text-[28px] font-semibold text-[#00ff88]">{s.value}</p>
+              <p className="text-xs sm:text-[13px] text-[#666666] mt-1">{s.label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Features */}
-      <section id="funciones" style={{ padding: "100px 32px" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "60px" }}>
-            <h2 style={{ fontSize: "28.8px", fontWeight: 600, color: "#f0f0f0", marginBottom: "12px" }}>
-              Lo que <span style={{ color: "#00ff88" }}>escaneamos</span> por ti
+      <section id="funciones" className="px-4 sm:px-8 py-16 sm:py-24">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-[28.8px] font-semibold mb-3">
+              Lo que <span className="text-[#00ff88]">escaneamos</span> por ti
             </h2>
-            <p style={{ color: "#bbbbbb", fontSize: "16px" }}>Cobertura completa de tu superficie de ataque externa.</p>
+            <p className="text-[#bbbbbb] text-base">Cobertura completa de tu superficie de ataque externa.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {features.map((f) => (
               <div
                 key={f.title}
-                style={{
-                  backgroundColor: "#181818",
-                  borderRadius: "14px",
-                  padding: "35px",
-                  border: "1px solid #181818",
-                }}
+                className="bg-[#181818] rounded-2xl p-7 sm:p-9 border border-[#181818] hover:border-[#00ff88]/30 transition-colors"
               >
-                <span style={{ fontSize: "32px", display: "block", marginBottom: "16px" }}>{f.icon}</span>
-                <h3 style={{ fontSize: "17px", fontWeight: 600, color: "#f0f0f0", marginBottom: "8px" }}>{f.title}</h3>
-                <p style={{ fontSize: "14px", color: "#bbbbbb", lineHeight: 1.7 }}>{f.desc}</p>
+                <span className="text-3xl block mb-4">{f.icon}</span>
+                <h3 className="text-[17px] font-semibold mb-2">{f.title}</h3>
+                <p className="text-sm text-[#bbbbbb] leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -166,71 +134,46 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="precios" style={{ padding: "100px 32px", borderTop: "1px solid #1a1a1a" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "60px" }}>
-            <h2 style={{ fontSize: "28.8px", fontWeight: 600, color: "#f0f0f0", marginBottom: "12px" }}>
-              Planes <span style={{ color: "#00ff88" }}>transparentes</span>
+      <section id="precios" className="px-4 sm:px-8 py-16 sm:py-24 border-t border-[#1a1a1a]">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-[28.8px] font-semibold mb-3">
+              Planes <span className="text-[#00ff88]">transparentes</span>
             </h2>
-            <p style={{ color: "#bbbbbb", fontSize: "16px" }}>Sin compromiso. Cancela cuando quieras.</p>
+            <p className="text-[#bbbbbb] text-base">Sin compromiso. Cancela cuando quieras.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", maxWidth: "960px", margin: "0 auto" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[960px] mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                style={{
-                  backgroundColor: "#0c0c0c",
-                  borderRadius: "14px",
-                  padding: "35px",
-                  border: plan.recommended ? "1px solid #00ff88" : "1px solid #181818",
-                  position: "relative",
-                }}
+                className={`bg-[#0c0c0c] rounded-2xl p-7 sm:p-9 relative ${
+                  plan.recommended ? "border border-[#00ff88] sm:col-span-2 lg:col-span-1" : "border border-[#181818]"
+                }`}
               >
                 {plan.recommended && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "-12px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      backgroundColor: "#00ff88",
-                      color: "#060606",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      padding: "4px 14px",
-                      borderRadius: "20px",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#00ff88] text-[#060606] text-[11px] font-bold px-3.5 py-1 rounded-full tracking-wide">
                     RECOMENDADO
                   </div>
                 )}
-                <h3 style={{ fontSize: "15px", fontWeight: 500, color: "#666666", marginBottom: "12px" }}>{plan.name}</h3>
-                <div style={{ marginBottom: "24px" }}>
-                  <span style={{ fontSize: "36px", fontWeight: 700, color: "#f0f0f0" }}>€{plan.price}</span>
-                  <span style={{ fontSize: "14px", color: "#666666" }}>/mes</span>
+                <h3 className="text-[15px] font-medium text-[#666666] mb-3">{plan.name}</h3>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">€{plan.price}</span>
+                  <span className="text-sm text-[#666666]">/mes</span>
                 </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px 0" }}>
+                <ul className="space-y-2.5 mb-7">
                   {plan.features.map((feat) => (
-                    <li key={feat} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#bbbbbb", marginBottom: "10px" }}>
-                      <span style={{ color: "#00ff88" }}>✓</span> {feat}
+                    <li key={feat} className="flex items-center gap-2 text-sm text-[#bbbbbb]">
+                      <span className="text-[#00ff88]">✓</span> {feat}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/register"
-                  style={{
-                    display: "block",
-                    textAlign: "center",
-                    padding: "12px",
-                    borderRadius: "10px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    backgroundColor: plan.recommended ? "#00ff88" : "transparent",
-                    color: plan.recommended ? "#060606" : "#00ff88",
-                    border: plan.recommended ? "none" : "1px solid #00ff88",
-                  }}
+                  className={`block text-center py-3 rounded-xl text-sm font-semibold transition-colors ${
+                    plan.recommended
+                      ? "bg-[#00ff88] text-[#060606] hover:bg-[#00e07a]"
+                      : "border border-[#00ff88] text-[#00ff88] hover:bg-[#00ff88] hover:text-[#060606]"
+                  }`}
                 >
                   Empezar ahora
                 </Link>
@@ -241,10 +184,10 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" style={{ padding: "100px 32px", borderTop: "1px solid #1a1a1a" }}>
-        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-          <h2 style={{ fontSize: "28.8px", fontWeight: 600, color: "#f0f0f0", textAlign: "center", marginBottom: "48px" }}>
-            Preguntas <span style={{ color: "#00ff88" }}>frecuentes</span>
+      <section id="faq" className="px-4 sm:px-8 py-16 sm:py-24 border-t border-[#1a1a1a]">
+        <div className="max-w-[700px] mx-auto">
+          <h2 className="text-2xl sm:text-[28.8px] font-semibold text-center mb-12">
+            Preguntas <span className="text-[#00ff88]">frecuentes</span>
           </h2>
           {faqs.map((faq) => (
             <FaqItem key={faq.q} question={faq.q} answer={faq.a} />
@@ -253,36 +196,27 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: "80px 32px", borderTop: "1px solid #1a1a1a", textAlign: "center" }}>
-        <h2 style={{ fontSize: "28.8px", fontWeight: 600, color: "#f0f0f0", marginBottom: "24px" }}>
-          ¿Listo para <span style={{ color: "#00ff88" }}>proteger</span> tu empresa?
+      <section className="px-4 sm:px-8 py-16 sm:py-20 border-t border-[#1a1a1a] text-center">
+        <h2 className="text-2xl sm:text-[28.8px] font-semibold mb-6">
+          ¿Listo para <span className="text-[#00ff88]">proteger</span> tu empresa?
         </h2>
         <Link
           href="/register"
-          style={{
-            display: "inline-block",
-            padding: "14px 36px",
-            backgroundColor: "#00ff88",
-            color: "#060606",
-            borderRadius: "10px",
-            fontSize: "16px",
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
+          className="inline-block px-8 sm:px-9 py-3.5 bg-[#00ff88] text-[#060606] rounded-xl text-base font-semibold hover:bg-[#00e07a] transition-colors"
         >
           Empieza gratis →
         </Link>
       </section>
 
       {/* Footer */}
-      <footer style={{ borderTop: "1px solid #1a1a1a", padding: "40px 32px", textAlign: "center" }}>
-        <p style={{ fontSize: "13px", color: "#666666" }}>
-          Un producto de <span style={{ color: "#bbbbbb" }}>OBX AI Studio</span> · © 2026
+      <footer className="border-t border-[#1a1a1a] px-4 sm:px-8 py-8 sm:py-10 text-center">
+        <p className="text-[13px] text-[#666666]">
+          Un producto de <span className="text-[#bbbbbb]">OBX AI Studio</span> · © 2026
         </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: "24px", marginTop: "12px" }}>
-          <a href="#funciones" style={{ fontSize: "13px", color: "#666666", textDecoration: "none" }}>Funciones</a>
-          <a href="#precios" style={{ fontSize: "13px", color: "#666666", textDecoration: "none" }}>Precios</a>
-          <Link href="/login" style={{ fontSize: "13px", color: "#666666", textDecoration: "none" }}>Acceder</Link>
+        <div className="flex justify-center gap-6 mt-3">
+          <a href="#funciones" className="text-[13px] text-[#666666] hover:text-[#bbbbbb]">Funciones</a>
+          <a href="#precios" className="text-[13px] text-[#666666] hover:text-[#bbbbbb]">Precios</a>
+          <Link href="/login" className="text-[13px] text-[#666666] hover:text-[#bbbbbb]">Acceder</Link>
         </div>
       </footer>
     </div>
