@@ -83,11 +83,12 @@ export default function AssetsPage() {
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Valor</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Estado</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                  <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {assets.map(a => (
-                  <tr key={a.id} className="hover:bg-gray-50">
+                  <tr key={a.id} className="hover:bg-gray-50 group">
                     <td className="px-6 py-4 text-sm">{typeIcons[a.type] || "📦"} {a.type}</td>
                     <td className="px-6 py-4 text-sm font-mono text-gray-900">{a.value}</td>
                     <td className="px-6 py-4">
@@ -96,6 +97,19 @@ export default function AssetsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">{new Date(a.createdAt).toLocaleDateString("es-ES")}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`¿Eliminar ${a.value}? Se borrarán también sus scans y hallazgos.`)) return;
+                          await fetch(`/api/assets?id=${a.id}`, { method: "DELETE" });
+                          setLoading(true);
+                          load();
+                        }}
+                        className="text-red-500 hover:text-red-700 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

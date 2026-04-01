@@ -32,3 +32,25 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(asset);
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "ID obligatorio" }, { status: 400 });
+
+  // Verify ownership
+  const asset = await prisma.asset.findFirst({
+    where: { id, organizationId: session.organizationId },
+  });
+  if (!asset) return NextResponse.json({ error: "Activo no encontrado" }, { status: 404 });
+
+  // Delete related scans and findings first
+  await prisma.finding.deleteMany({ where: { scan: { assetId: id } } });
+  await prisma.scan.deleteMany({ where: { assetId: id } });
+  await prisma.asset.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true });
+}
