@@ -12,8 +12,6 @@ model Organization {
   name      String
   slug      String   @unique
   plan                  String   @default("starter")
-  stripeCustomerId      String?  @unique
-  stripeSubscriptionId  String?
   createdAt             DateTime @default(now())
   users     User[]
   assets    Asset[]
