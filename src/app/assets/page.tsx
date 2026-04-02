@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import ReportButton from "@/components/ReportButton";
 
 interface Asset {
   id: string;
@@ -9,6 +10,8 @@ interface Asset {
   value: string;
   status: string;
   createdAt: string;
+  lastScanAt?: string | null;
+  findingCount?: number;
 }
 
 const typeIcons: Record<string, JSX.Element> = {
@@ -52,6 +55,8 @@ export default function AssetsPage() {
   const [newValue, setNewValue] = useState("");
   const [planError, setPlanError] = useState("");
   const [plan, setPlan] = useState("");
+  const [scanning, setScanning] = useState<Record<string, boolean>>({});
+  const [scanResults, setScanResults] = useState<Record<string, string>>({});
 
   const load = () => {
     fetch("/api/assets").then(r => r.json()).then((data) => {
@@ -82,6 +87,58 @@ export default function AssetsPage() {
     setShowForm(false);
     setLoading(true);
     load();
+  };
+
+  const startScan = async (assetId: string) => {
+    setScanning((s) => ({ ...s, [assetId]: true }));
+    setScanResults((r) => ({ ...r, [assetId]: "" }));
+    try {
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.upgradeRequired) {
+          setPlanError(data.error);
+        }
+        setScanResults((r) => ({ ...r, [assetId]: data.error || "Error" }));
+        return;
+      }
+      // Poll for completion
+      const scanId = data.scan?.id;
+      if (scanId) {
+        let attempts = 0;
+        const poll = async () => {
+          attempts++;
+          const sr = await fetch(`/api/scan?id=${scanId}`);
+          const scanData = await sr.json();
+          if (scanData?.status === "completed" || scanData?.status === "failed") {
+            const count = scanData.findings?.length || 0;
+            setScanResults((r) => ({
+              ...r,
+              [assetId]: scanData.status === "completed"
+                ? `${count} hallazgo${count !== 1 ? "s" : ""}`
+                : "Error en escaneo",
+            }));
+            setScanning((s) => ({ ...s, [assetId]: false }));
+            load();
+            return;
+          }
+          if (attempts < 60) {
+            setTimeout(poll, 2000);
+          } else {
+            setScanResults((r) => ({ ...r, [assetId]: "Timeout" }));
+            setScanning((s) => ({ ...s, [assetId]: false }));
+          }
+        };
+        setTimeout(poll, 3000);
+      }
+    } catch {
+      setScanResults((r) => ({ ...r, [assetId]: "Error de conexión" }));
+      setScanning((s) => ({ ...s, [assetId]: false }));
+    }
   };
 
   return (
@@ -144,7 +201,8 @@ export default function AssetsPage() {
                   <th className="text-left px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Tipo</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Valor</th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Estado</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Fecha</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Último escaneo</th>
+                  <th className="text-left px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Hallazgos</th>
                   <th className="text-right px-6 py-3 text-xs font-medium text-[#888] uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
@@ -163,19 +221,54 @@ export default function AssetsPage() {
                         {a.status === "active" ? "Activo" : a.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#888]">{new Date(a.createdAt).toLocaleDateString("es-ES")}</td>
+                    <td className="px-6 py-4 text-sm text-[#888]">
+                      {a.lastScanAt ? new Date(a.lastScanAt).toLocaleDateString("es-ES") : "—"}
+                    </td>
+                    <td className="px-6 py-4">
+                      {typeof a.findingCount === "number" ? (
+                        <span className="inline-flex px-2 py-0.5 text-xs rounded-full font-mono bg-[#222] text-[#ccc]">
+                          {a.findingCount}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-[#555]">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`¿Eliminar ${a.value}? Se borrarán también sus scans y hallazgos.`)) return;
-                          await fetch(`/api/assets?id=${a.id}`, { method: "DELETE" });
-                          setLoading(true);
-                          load();
-                        }}
-                        className="text-red-500 hover:text-red-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        Eliminar
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => startScan(a.id)}
+                          disabled={scanning[a.id]}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20 rounded-lg hover:bg-[#00ff88]/20 transition-colors disabled:opacity-50"
+                        >
+                          {scanning[a.id] ? (
+                            <>
+                              <svg className="animate-spin w-3 h-3" viewBox="0 0 16 16" fill="none">
+                                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="8" />
+                              </svg>
+                              Escaneando…
+                            </>
+                          ) : (
+                            "Escanear"
+                          )}
+                        </button>
+                        {scanResults[a.id] && !scanning[a.id] && (
+                          <span className="text-xs text-[#888]">{scanResults[a.id]}</span>
+                        )}
+                        {plan && plan !== "starter" && (
+                          <ReportButton assetId={a.id} size="sm" />
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`¿Eliminar ${a.value}? Se borrarán también sus scans y hallazgos.`)) return;
+                            await fetch(`/api/assets?id=${a.id}`, { method: "DELETE" });
+                            setLoading(true);
+                            load();
+                          }}
+                          className="text-red-500 hover:text-red-400 text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

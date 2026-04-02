@@ -3,6 +3,22 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Onboarding from "@/components/Onboarding";
+import ReportButton from "@/components/ReportButton";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from "recharts";
+
+interface HistoryPoint {
+  date: string;
+  score: number;
+  findings_count: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  info: number;
+}
 
 interface DashboardData {
   totalAssets: number;
@@ -16,6 +32,7 @@ interface DashboardData {
   findingsByStatus: { status: string; count: number }[];
   recentFindings: { id: string; title: string; severity: string; cvssScore: number; asset: string; detectedAt: string }[];
   sslExpirations: { domain: string; expiresAt: string; daysLeft: number }[];
+  firstAssetId: string | null;
 }
 
 const severityColors: Record<string, string> = {
@@ -122,6 +139,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
 
   const loadData = () => {
     fetch("/api/dashboard")
@@ -134,7 +152,13 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    fetch("/api/dashboard/history")
+      .then((r) => r.json())
+      .then((h) => { if (Array.isArray(h)) setHistory(h); })
+      .catch(console.error);
+  }, []);
 
   if (loading) return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
@@ -183,8 +207,11 @@ export default function DashboardPage() {
 
         {/* Top row: Grade + KPIs */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8 animate-in">
-          <div className="lg:col-span-1 bg-[#181818] border border-[#222] rounded-2xl p-6 flex items-center justify-center card-hover">
+          <div className="lg:col-span-1 bg-[#181818] border border-[#222] rounded-2xl p-6 flex flex-col items-center justify-center gap-3 card-hover">
             <SecurityGradeBadge score={data.score} />
+            {data.firstAssetId && data.plan !== "starter" && (
+              <ReportButton assetId={data.firstAssetId} size="sm" />
+            )}
           </div>
           <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
@@ -232,6 +259,116 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Charts: Trend + Severity Pie */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in-delay-2">
+          {/* Security Score Trend */}
+          <div className="lg:col-span-2 bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
+            <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Evolución del Security Score</h2>
+            {history.length <= 1 ? (
+              <div className="flex items-center justify-center h-48">
+                <div className="text-center">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-[#333] mx-auto mb-3">
+                    <path d="M1 12l3-4 3 2 4-6 4 3" />
+                  </svg>
+                  <p className="text-sm text-[#888]">Realiza más escaneos para ver la tendencia</p>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={history} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00ff88" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#00ff88" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#555"
+                    tick={{ fill: "#888", fontSize: 11 }}
+                    tickFormatter={(v) => new Date(v).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                  />
+                  <YAxis domain={[0, 100]} stroke="#555" tick={{ fill: "#888", fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333", borderRadius: "12px" }}
+                    labelStyle={{ color: "#888" }}
+                    itemStyle={{ color: "#00ff88" }}
+                    labelFormatter={(v) => new Date(v).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
+                    formatter={(value: number) => [`${value} pts`, "Score"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#00ff88"
+                    strokeWidth={2}
+                    fill="url(#scoreGradient)"
+                    dot={{ fill: "#00ff88", strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, fill: "#00ff88", stroke: "#0a0a0a", strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Severity Pie Chart */}
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
+            <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Hallazgos por severidad</h2>
+            {(() => {
+              const pieData = (data.findingsBySeverity || []).filter((s) => s.count > 0);
+              const total = pieData.reduce((sum, s) => sum + s.count, 0);
+              const COLORS: Record<string, string> = {
+                critical: "#ef4444",
+                high: "#f97316",
+                medium: "#eab308",
+                low: "#22c55e",
+                info: "#3b82f6",
+              };
+              if (total === 0) {
+                return (
+                  <div className="flex items-center justify-center h-48">
+                    <p className="text-sm text-[#888]">Sin hallazgos</p>
+                  </div>
+                );
+              }
+              return (
+                <div className="relative flex items-center justify-center" style={{ height: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="count"
+                        nameKey="severity"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={3}
+                        stroke="none"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={index} fill={COLORS[entry.severity] || "#666"} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#1a1a1a", border: "1px solid #333", borderRadius: "12px" }}
+                        itemStyle={{ color: "#f0f0f0" }}
+                        formatter={(value: number, name: string) => [value, name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-center">
+                      <span className="text-2xl font-bold text-[#f0f0f0] font-mono">{total}</span>
+                      <p className="text-[10px] text-[#888]">total</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

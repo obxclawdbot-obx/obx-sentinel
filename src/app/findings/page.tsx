@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 
 interface Finding {
@@ -128,7 +129,7 @@ export default function FindingsPage() {
           <div className="space-y-3 animate-in-delay-1">
             {findings.map(f => (
               <div key={f.id} className={`bg-[#181818] border border-[#222] rounded-2xl overflow-hidden card-hover ${severityGlowClass[f.severity] || ""}`}>
-                <div className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
+                <Link href={`/findings/${f.id}`} className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors" onClick={(e) => { if ((e.target as HTMLElement).closest('button')) { e.preventDefault(); } }}>
                   <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${severityBadge[f.severity]}`}>
                     {f.severity.toUpperCase()} <span className="font-mono ml-1">{f.cvssScore.toFixed(1)}</span>
                   </span>
@@ -140,8 +141,10 @@ export default function FindingsPage() {
                     {statusLabel[f.status]}
                   </span>
                   <span className="text-xs text-[#555]">{new Date(f.detectedAt).toLocaleDateString("es-ES")}</span>
-                  <span className="text-[#555] transition-transform" style={{ transform: expanded === f.id ? "rotate(180deg)" : "none" }}>▼</span>
-                </div>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 text-[#555]">
+                    <path d="M6 3l5 5-5 5" />
+                  </svg>
+                </Link>
                 {expanded === f.id && (
                   <div className="px-6 py-4 border-t border-[#222] bg-[#111]">
                     <p className="text-sm text-[#888] mb-3">{f.description}</p>

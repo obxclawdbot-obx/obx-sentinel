@@ -69,5 +69,6 @@ export async function GET() {
       detectedAt: f.detectedAt,
     })),
     sslExpirations,
+    firstAssetId: await prisma.asset.findFirst({ where: { organizationId: orgId }, select: { id: true } }).then((a: any) => a?.id || null),
   });
 }

@@ -80,5 +80,19 @@ model AlertConfig {
   channel        String       @default("email") // email
   enabled        Boolean      @default(true)
   threshold      String?
+  emailAddress   String?
+  minSeverity    String       @default("medium")
+  createdAt      DateTime     @default(now())
+}
+
+model AlertHistory {
+  id             String       @id @default(cuid())
+  organizationId String
+  scanId         String?
+  type           String       // scan_alert, threshold_alert
+  severity       String       // highest severity in the alert
+  findingsCount  Int          @default(0)
+  message        String
+  sent           Boolean      @default(false)
   createdAt      DateTime     @default(now())
 }

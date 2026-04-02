@@ -10,10 +10,26 @@ export async function GET() {
   const orgId = session.organizationId;
   const assets = await prisma.asset.findMany({
     where: { organizationId: orgId },
+    include: {
+      scans: { orderBy: { startedAt: "desc" }, take: 1, select: { startedAt: true } },
+      _count: { select: { findings: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(assets);
+  const org = await prisma.organization.findUnique({ where: { id: orgId } });
+
+  const mapped = assets.map((a) => ({
+    id: a.id,
+    type: a.type,
+    value: a.value,
+    status: a.status,
+    createdAt: a.createdAt,
+    lastScanAt: a.scans[0]?.startedAt || null,
+    findingCount: a._count.findings,
+  }));
+
+  return NextResponse.json({ assets: mapped, plan: org?.plan || "starter" });
 }
 
 export async function POST(req: NextRequest) {

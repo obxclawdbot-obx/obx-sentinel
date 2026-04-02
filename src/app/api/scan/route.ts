@@ -9,6 +9,7 @@ import {
 } from "@/lib/scanners";
 import type { FindingData } from "@/lib/scanners";
 import { getPlanConfig } from "@/lib/plans";
+import { checkAndSendAlerts } from "@/lib/alerts";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -86,10 +87,22 @@ async function runScanners(
       }
     }
 
-    const results = await Promise.all(scannerPromises);
-    for (const findings of results) {
-      allFindings.push(...findings);
+    const startTime = Date.now();
+    const results = await Promise.allSettled(scannerPromises);
+    const elapsed = Date.now() - startTime;
+    
+    let fulfilled = 0;
+    let rejected = 0;
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        allFindings.push(...result.value);
+        fulfilled++;
+      } else {
+        rejected++;
+        console.error(`Scanner failed in scan ${scanId}:`, result.reason);
+      }
     }
+    console.log(`Scan ${scanId}: ${fulfilled} scanners OK, ${rejected} failed, ${allFindings.length} findings in ${elapsed}ms`);
 
     // Save findings to DB
     if (allFindings.length > 0) {
@@ -118,6 +131,9 @@ async function runScanners(
       where: { id: scanId },
       data: { status: "completed", completedAt: new Date() },
     });
+
+    // Check and send alerts
+    await checkAndSendAlerts(scanId);
   } catch (err: any) {
     console.error(`Scan ${scanId} failed:`, err);
     await prisma.scan.update({

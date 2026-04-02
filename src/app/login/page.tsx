@@ -100,9 +100,6 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-4 p-3 bg-[#111] rounded-xl border border-[#222]">
-            <p className="text-xs text-[#555] text-center font-mono">Demo: admin@sentinel-demo.com / admin1234</p>
-          </div>
         </form>
       </div>
     </div>

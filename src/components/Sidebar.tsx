@@ -51,6 +51,15 @@ const nav = [
     ),
   },
   {
+    href: "/compliance",
+    label: "Cumplimiento",
+    icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+        <path d="M8 1L2 4v4c0 3.3 2.6 6.4 6 7 3.4-.6 6-3.7 6-7V4L8 1z"/><path d="M5.5 8l2 2 3-3.5"/>
+      </svg>
+    ),
+  },
+  {
     href: "/settings",
     label: "Configuración",
     icon: (
@@ -111,7 +120,7 @@ export default function Sidebar({ plan }: SidebarProps) {
           const isActive = pathname === item.href;
           return (
             <div key={item.href}>
-              {idx === 4 && (
+              {idx === 5 && (
                 <div className="my-3 mx-3 h-px bg-gradient-to-r from-transparent via-[#222] to-transparent" />
               )}
               <Link

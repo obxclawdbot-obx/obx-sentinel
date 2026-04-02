@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import ReportButton from "@/components/ReportButton";
 
 interface Asset {
   id: string;
@@ -20,6 +21,23 @@ interface Scan {
   _count?: { findings: number };
 }
 
+interface ComparisonFinding {
+  id: string;
+  title: string;
+  severity: string;
+  cvssScore: number;
+  description: string;
+}
+
+interface ComparisonResult {
+  new: ComparisonFinding[];
+  resolved: ComparisonFinding[];
+  persistent: ComparisonFinding[];
+  score1: number;
+  score2: number;
+  scoreDelta: number;
+}
+
 const typeLabels: Record<string, string> = {
   port_scan: "Escaneo de puertos",
   ssl_check: "Verificación SSL",
@@ -27,6 +45,14 @@ const typeLabels: Record<string, string> = {
   header_check: "Análisis headers",
   full_scan: "Escaneo completo",
   email_breach: "Búsqueda de brechas",
+};
+
+const severityColors: Record<string, string> = {
+  critical: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-yellow-500",
+  low: "bg-green-500",
+  info: "bg-blue-500",
 };
 
 const statusStyles: Record<string, string> = {
@@ -67,6 +93,10 @@ export default function ScansPage() {
   const [launching, setLaunching] = useState(false);
   const [planError, setPlanError] = useState("");
   const [plan, setPlan] = useState("");
+  const [comparing, setComparing] = useState(false);
+  const [comparison, setComparison] = useState<ComparisonResult | null>(null);
+  const [compareScan1, setCompareScan1] = useState("");
+  const [compareScan2, setCompareScan2] = useState("");
 
   const fetchScans = () =>
     fetch("/api/scan").then((r) => r.json()).then(setScans).catch(console.error);
@@ -114,6 +144,30 @@ export default function ScansPage() {
     }
   };
 
+  const runComparison = async () => {
+    if (!compareScan1 || !compareScan2) return;
+    setComparing(true);
+    try {
+      const res = await fetch(`/api/scans/compare?scan1=${compareScan1}&scan2=${compareScan2}`);
+      const data = await res.json();
+      if (res.ok) setComparison(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setComparing(false);
+    }
+  };
+
+  // Group scans by asset for comparison
+  const completedScans = scans.filter((s) => s.status === "completed");
+  const scansByAsset: Record<string, Scan[]> = {};
+  completedScans.forEach((s) => {
+    const key = s.asset?.id || "unknown";
+    if (!scansByAsset[key]) scansByAsset[key] = [];
+    scansByAsset[key].push(s);
+  });
+  const canCompare = completedScans.length >= 2;
+
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar plan={plan} />
@@ -160,6 +214,140 @@ export default function ScansPage() {
           </div>
         </div>
 
+        {/* Scan Comparison */}
+        {canCompare && (
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 mb-6 card-hover animate-in">
+            <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Comparar escaneos</h2>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-medium text-[#888] mb-1">Scan anterior</label>
+                <select
+                  value={compareScan1}
+                  onChange={(e) => { setCompareScan1(e.target.value); setComparison(null); }}
+                  className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88]"
+                >
+                  <option value="">Seleccionar...</option>
+                  {completedScans.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.asset?.value} — {typeLabels[s.type] || s.type} — {new Date(s.startedAt).toLocaleString("es-ES")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-medium text-[#888] mb-1">Scan actual</label>
+                <select
+                  value={compareScan2}
+                  onChange={(e) => { setCompareScan2(e.target.value); setComparison(null); }}
+                  className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88]"
+                >
+                  <option value="">Seleccionar...</option>
+                  {completedScans.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.asset?.value} — {typeLabels[s.type] || s.type} — {new Date(s.startedAt).toLocaleString("es-ES")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={runComparison}
+                disabled={!compareScan1 || !compareScan2 || compareScan1 === compareScan2 || comparing}
+                className="flex items-center gap-2 px-6 py-2 bg-[#00ff88] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#00e07a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                {comparing ? "Comparando..." : "Comparar"}
+              </button>
+            </div>
+
+            {/* Comparison Results */}
+            {comparison && (
+              <div className="mt-6 space-y-4">
+                {/* Score Delta */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-[#111] border border-[#1a1a1a]">
+                  <div className="text-center flex-1">
+                    <p className="text-xs text-[#888] mb-1">Score anterior</p>
+                    <p className="text-2xl font-bold text-[#f0f0f0] font-mono">{comparison.score1}</p>
+                  </div>
+                  <div className="text-center">
+                    <span className={`text-lg font-bold font-mono ${
+                      comparison.scoreDelta > 0 ? "text-[#00ff88]" : comparison.scoreDelta < 0 ? "text-red-500" : "text-[#888]"
+                    }`}>
+                      {comparison.scoreDelta > 0 ? "↑" : comparison.scoreDelta < 0 ? "↓" : "="}{" "}
+                      {comparison.scoreDelta > 0 ? "+" : ""}{comparison.scoreDelta} pts
+                    </span>
+                  </div>
+                  <div className="text-center flex-1">
+                    <p className="text-xs text-[#888] mb-1">Score actual</p>
+                    <p className="text-2xl font-bold text-[#f0f0f0] font-mono">{comparison.score2}</p>
+                  </div>
+                </div>
+
+                {/* Finding changes */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* New findings */}
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-500 text-xs font-bold">{comparison.new.length}</span>
+                      <h3 className="text-sm font-semibold text-[#f0f0f0]">Nuevos hallazgos</h3>
+                    </div>
+                    {comparison.new.length === 0 ? (
+                      <p className="text-xs text-[#888]">Sin nuevos hallazgos</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {comparison.new.map((f) => (
+                          <div key={f.id} className="text-xs">
+                            <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${severityColors[f.severity] || "bg-gray-500"}`} />
+                            <span className="text-[#f0f0f0]">{f.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Resolved findings */}
+                  <div className="rounded-xl border border-[#00ff88]/20 bg-[#00ff88]/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2 py-0.5 rounded-full bg-[#00ff88]/20 text-[#00ff88] text-xs font-bold">{comparison.resolved.length}</span>
+                      <h3 className="text-sm font-semibold text-[#f0f0f0]">Resueltos</h3>
+                    </div>
+                    {comparison.resolved.length === 0 ? (
+                      <p className="text-xs text-[#888]">Sin hallazgos resueltos</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {comparison.resolved.map((f) => (
+                          <div key={f.id} className="text-xs">
+                            <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${severityColors[f.severity] || "bg-gray-500"}`} />
+                            <span className="text-[#f0f0f0] line-through opacity-60">{f.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Persistent findings */}
+                  <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-500 text-xs font-bold">{comparison.persistent.length}</span>
+                      <h3 className="text-sm font-semibold text-[#f0f0f0]">Persistentes</h3>
+                    </div>
+                    {comparison.persistent.length === 0 ? (
+                      <p className="text-xs text-[#888]">Sin hallazgos persistentes</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {comparison.persistent.map((f) => (
+                          <div key={f.id} className="text-xs">
+                            <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${severityColors[f.severity] || "bg-gray-500"}`} />
+                            <span className="text-[#f0f0f0]">{f.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Scan history */}
         <div className="bg-[#181818] border border-[#222] rounded-2xl overflow-hidden card-hover animate-in-delay-1">
           <div className="p-6 border-b border-[#222]">
@@ -184,6 +372,7 @@ export default function ScansPage() {
                   <th className="px-6 py-3 text-left">Estado</th>
                   <th className="px-6 py-3 text-left">Hallazgos</th>
                   <th className="px-6 py-3 text-left">Fecha</th>
+                  <th className="px-6 py-3 text-right">Informe</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1a1a1a]">
@@ -205,6 +394,11 @@ export default function ScansPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-[#888]">
                       {new Date(scan.startedAt).toLocaleString("es-ES")}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {scan.status === "completed" && (
+                        <ReportButton scanId={scan.id} size="sm" />
+                      )}
                     </td>
                   </tr>
                 ))}
