@@ -2,7 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { scanSSL, scanDNS, scanPorts, scanHeaders } from "@/lib/scanners";
+import {
+  scanSSL, scanDNS, scanPorts, scanHeaders,
+  scanTech, scanSubdomains, scanCookies, scanWAF,
+  scanEmailSecurity, scanLeaked,
+} from "@/lib/scanners";
 import type { FindingData } from "@/lib/scanners";
 import { getPlanConfig } from "@/lib/plans";
 
@@ -57,6 +61,24 @@ async function runScanners(
       }
       if (allowedScanners.includes("header_check")) {
         scannerPromises.push(scanHeaders(`https://${domain}`));
+      }
+      if (allowedScanners.includes("tech_detect")) {
+        scannerPromises.push(scanTech(`https://${domain}`));
+      }
+      if (allowedScanners.includes("subdomain_scan")) {
+        scannerPromises.push(scanSubdomains(domain));
+      }
+      if (allowedScanners.includes("cookie_check")) {
+        scannerPromises.push(scanCookies(`https://${domain}`));
+      }
+      if (allowedScanners.includes("waf_detect")) {
+        scannerPromises.push(scanWAF(`https://${domain}`));
+      }
+      if (allowedScanners.includes("email_security")) {
+        scannerPromises.push(scanEmailSecurity(domain));
+      }
+      if (allowedScanners.includes("leaked_check")) {
+        scannerPromises.push(scanLeaked(domain));
       }
     } else if (asset.type === "ip") {
       if (allowedScanners.includes("port_scan")) {
@@ -140,7 +162,7 @@ export async function POST(req: NextRequest) {
 
   // Plan gating: check scan frequency
   const org = await prisma.organization.findUnique({ where: { id: orgId } });
-  const planConfig = getPlanConfig(org?.plan || "basico");
+  const planConfig = getPlanConfig(org?.plan || "starter");
 
   // Check scan cooldown / frequency
   if (planConfig.scanCooldownMs > 0) {

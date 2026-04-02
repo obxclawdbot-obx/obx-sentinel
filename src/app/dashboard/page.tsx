@@ -34,6 +34,14 @@ const severityTextColors: Record<string, string> = {
   info: "text-blue-500",
 };
 
+const severityGlow: Record<string, string> = {
+  critical: "severity-glow-critical",
+  high: "severity-glow-high",
+  medium: "severity-glow-medium",
+  low: "",
+  info: "",
+};
+
 const statusLabels: Record<string, string> = {
   open: "Abiertos",
   in_progress: "En progreso",
@@ -54,10 +62,11 @@ function SecurityGradeBadge({ score }: { score: number }) {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
+  const glowClass = score < 60 ? "pulse-glow-red" : score < 75 ? "pulse-glow-orange" : "";
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative">
+      <div className={`relative rounded-full ${glowClass}`}>
         <svg width="140" height="140" viewBox="0 0 140 140">
           <circle
             cx="70" cy="70" r={radius}
@@ -86,6 +95,29 @@ function SecurityGradeBadge({ score }: { score: number }) {
   );
 }
 
+function SkeletonCard({ className = "" }: { className?: string }) {
+  return (
+    <div className={`bg-[#181818] border border-[#222] rounded-2xl p-6 ${className}`}>
+      <div className="skeleton h-4 w-24 mb-3" />
+      <div className="skeleton h-8 w-16" />
+    </div>
+  );
+}
+
+function SkeletonBlock({ className = "" }: { className?: string }) {
+  return (
+    <div className={`bg-[#181818] border border-[#222] rounded-2xl p-6 ${className}`}>
+      <div className="skeleton h-5 w-40 mb-4" />
+      <div className="space-y-3">
+        <div className="skeleton h-4 w-full" />
+        <div className="skeleton h-4 w-3/4" />
+        <div className="skeleton h-4 w-5/6" />
+        <div className="skeleton h-4 w-2/3" />
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,8 +139,20 @@ export default function DashboardPage() {
   if (loading) return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar />
-      <main className="flex-1 p-8">
-        <div className="animate-pulse text-[#888]">Cargando dashboard...</div>
+      <main className="flex-1 p-8 bg-grid">
+        <div className="skeleton h-7 w-56 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+          <SkeletonBlock className="lg:col-span-1" />
+          <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <SkeletonBlock /><SkeletonBlock />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonBlock /><SkeletonBlock />
+        </div>
       </main>
     </div>
   );
@@ -134,37 +178,37 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar plan={data.plan} />
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6">Dashboard de Seguridad</h1>
+      <main className="flex-1 p-8 bg-grid">
+        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6 animate-in">Dashboard de Seguridad</h1>
 
         {/* Top row: Grade + KPIs */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-          <div className="lg:col-span-1 bg-[#181818] border border-[#222] rounded-2xl p-6 flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8 animate-in">
+          <div className="lg:col-span-1 bg-[#181818] border border-[#222] rounded-2xl p-6 flex items-center justify-center card-hover">
             <SecurityGradeBadge score={data.score} />
           </div>
           <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
               <p className="text-sm text-[#888] mb-1">Activos monitorizados</p>
               <p className="text-3xl font-bold text-[#f0f0f0] font-mono">{data.totalAssets}</p>
             </div>
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
               <p className="text-sm text-[#888] mb-1">Total hallazgos</p>
               <p className="text-3xl font-bold text-[#f0f0f0] font-mono">{data.totalFindings}</p>
             </div>
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
               <p className="text-sm text-[#888] mb-1">Hallazgos abiertos</p>
               <p className="text-3xl font-bold text-orange-500 font-mono">{data.openFindings}</p>
             </div>
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
               <p className="text-sm text-[#888] mb-1">Críticos</p>
               <p className="text-3xl font-bold text-red-500 font-mono">{data.criticalFindings}</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 animate-in-delay-1">
           {/* Findings by Severity */}
-          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
             <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Hallazgos por severidad</h2>
             <div className="space-y-3">
               {data.findingsBySeverity.map((item) => (
@@ -178,7 +222,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Findings by Status */}
-          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
             <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Estado de hallazgos</h2>
             <div className="space-y-3">
               {data.findingsByStatus.map((item) => (
@@ -191,14 +235,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in-delay-2">
           {/* Recent Findings */}
-          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
             <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Últimos hallazgos</h2>
             {data.recentFindings && data.recentFindings.length > 0 ? (
               <div className="space-y-3">
                 {data.recentFindings.map((f) => (
-                  <div key={f.id} className="flex items-start gap-3 p-3 rounded-xl bg-[#111] border border-[#1a1a1a]">
+                  <div key={f.id} className={`flex items-start gap-3 p-3 rounded-xl bg-[#111] border border-[#1a1a1a] ${severityGlow[f.severity] || ""}`}>
                     <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${severityColors[f.severity]}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#f0f0f0] truncate">{f.title}</p>
@@ -206,19 +250,31 @@ export default function DashboardPage() {
                         <span className="font-mono">{f.asset}</span> · CVSS <span className="font-mono">{f.cvssScore}</span> · {new Date(f.detectedAt).toLocaleDateString("es-ES")}
                       </p>
                     </div>
-                    <span className={`text-xs font-medium capitalize ${severityTextColors[f.severity]}`}>
+                    <span className={`text-xs font-medium capitalize px-2 py-0.5 rounded-full border ${
+                      f.severity === "critical" ? "bg-red-500/10 text-red-500 border-red-500/20" :
+                      f.severity === "high" ? "bg-orange-500/10 text-orange-500 border-orange-500/20" :
+                      f.severity === "medium" ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" :
+                      f.severity === "low" ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                      "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                    }`}>
                       {f.severity}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#888]">No hay hallazgos recientes.</p>
+              <div className="text-center py-8">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-[#333] mx-auto mb-3">
+                  <path d="M8 1L2 4v4c0 3.3 2.6 6.4 6 7 3.4-.6 6-3.7 6-7V4L8 1z"/>
+                </svg>
+                <p className="text-sm text-[#888]">No hay hallazgos recientes.</p>
+                <p className="text-xs text-[#555] mt-1">Lanza un escaneo para empezar.</p>
+              </div>
             )}
           </div>
 
           {/* SSL Expirations */}
-          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover">
             <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Próximas expiraciones SSL</h2>
             {data.sslExpirations && data.sslExpirations.length > 0 ? (
               <div className="space-y-3">
@@ -239,7 +295,12 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#888]">Sin certificados próximos a expirar.</p>
+              <div className="text-center py-8">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8 text-[#333] mx-auto mb-3">
+                  <rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5 7V5a3 3 0 016 0v2"/>
+                </svg>
+                <p className="text-sm text-[#888]">Sin certificados próximos a expirar.</p>
+              </div>
             )}
           </div>
         </div>

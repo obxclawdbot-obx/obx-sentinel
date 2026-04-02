@@ -43,6 +43,22 @@ const statusLabels: Record<string, string> = {
   failed: "Fallido",
 };
 
+function SkeletonTable() {
+  return (
+    <div className="p-6 space-y-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex gap-6">
+          <div className="skeleton h-4 w-32" />
+          <div className="skeleton h-4 w-28" />
+          <div className="skeleton h-4 w-20" />
+          <div className="skeleton h-4 w-12" />
+          <div className="skeleton h-4 w-24" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ScansPage() {
   const [scans, setScans] = useState<Scan[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -101,19 +117,19 @@ export default function ScansPage() {
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar plan={plan} />
-      <main className="flex-1 p-8">
-        <div className="flex items-center justify-between mb-6">
+      <main className="flex-1 p-8 bg-grid">
+        <div className="flex items-center justify-between mb-6 animate-in">
           <h1 className="text-2xl font-bold text-[#f0f0f0]">Motor de Escaneo</h1>
         </div>
 
         {planError && (
-          <div className="mb-6">
+          <div className="mb-6 animate-in">
             <UpgradePrompt message={planError} currentPlan={plan} />
           </div>
         )}
 
         {/* Launch scan */}
-        <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 mb-6">
+        <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 mb-6 card-hover animate-in">
           <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Lanzar escaneo</h2>
           <div className="flex gap-4 items-end">
             <div className="flex-1">
@@ -134,22 +150,31 @@ export default function ScansPage() {
             <button
               onClick={launchScan}
               disabled={!selectedAsset || launching}
-              className="px-6 py-2 bg-[#00ff88] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#00e07a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-6 py-2 bg-[#00ff88] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#00e07a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              {launching ? "Lanzando..." : "⚡ Lanzar escaneo"}
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+                <path d="M9 1L3 9h5l-1 6 6-8H8l1-6z"/>
+              </svg>
+              {launching ? "Lanzando..." : "Lanzar escaneo"}
             </button>
           </div>
         </div>
 
         {/* Scan history */}
-        <div className="bg-[#181818] border border-[#222] rounded-2xl overflow-hidden">
+        <div className="bg-[#181818] border border-[#222] rounded-2xl overflow-hidden card-hover animate-in-delay-1">
           <div className="p-6 border-b border-[#222]">
             <h2 className="text-lg font-semibold text-[#f0f0f0]">Historial de escaneos</h2>
           </div>
           {loading ? (
-            <div className="p-6 text-[#888] animate-pulse">Cargando...</div>
+            <SkeletonTable />
           ) : scans.length === 0 ? (
-            <div className="p-6 text-[#888]">No hay escaneos registrados. Lanza el primero.</div>
+            <div className="p-12 text-center">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 text-[#333] mx-auto mb-3">
+                <path d="M9 1L3 9h5l-1 6 6-8H8l1-6z"/>
+              </svg>
+              <p className="text-[#888] mb-2">No hay escaneos registrados.</p>
+              <p className="text-xs text-[#555]">Selecciona un activo y lanza el primer escaneo.</p>
+            </div>
           ) : (
             <table className="w-full">
               <thead className="text-xs text-[#888] uppercase tracking-wider border-b border-[#222]">

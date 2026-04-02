@@ -13,38 +13,46 @@ export interface PlanConfig {
 }
 
 export const PLANS: Record<string, PlanConfig> = {
-  basico: {
-    name: "basico",
-    label: "Básico",
-    price: 99,
-    maxAssets: 5,
-    allowedScanners: ["port_scan", "ssl_check"],
-    maxScansPerDay: 1, // 1 per week = treat as 1/day with weekly check
+  starter: {
+    name: "starter",
+    label: "Starter",
+    price: 49,
+    maxAssets: 3,
+    allowedScanners: ["port_scan", "ssl_check", "header_check"],
+    maxScansPerDay: 1,
     scanCooldownMs: 7 * 24 * 60 * 60 * 1000, // 1 week
     historyDays: 30,
     pdfReports: false,
     customLogo: false,
     apiAccess: false,
   },
-  profesional: {
-    name: "profesional",
-    label: "Profesional",
-    price: 199,
-    maxAssets: 25,
-    allowedScanners: ["port_scan", "ssl_check", "dns_check", "header_check"],
-    maxScansPerDay: 5,
+  professional: {
+    name: "professional",
+    label: "Professional",
+    price: 149,
+    maxAssets: 15,
+    allowedScanners: [
+      "port_scan", "ssl_check", "dns_check", "header_check",
+      "tech_detect", "subdomain_scan", "cookie_check", "waf_detect",
+      "email_security", "leaked_check",
+    ],
+    maxScansPerDay: 10,
     scanCooldownMs: 0,
     historyDays: 90,
     pdfReports: true,
     customLogo: false,
     apiAccess: false,
   },
-  enterprise: {
-    name: "enterprise",
-    label: "Enterprise",
+  business: {
+    name: "business",
+    label: "Business",
     price: 299,
     maxAssets: Infinity,
-    allowedScanners: ["port_scan", "ssl_check", "dns_check", "header_check"],
+    allowedScanners: [
+      "port_scan", "ssl_check", "dns_check", "header_check",
+      "tech_detect", "subdomain_scan", "cookie_check", "waf_detect",
+      "email_security", "leaked_check",
+    ],
     maxScansPerDay: Infinity,
     scanCooldownMs: 0,
     historyDays: 365,
@@ -55,7 +63,7 @@ export const PLANS: Record<string, PlanConfig> = {
 };
 
 export function getPlanConfig(plan: string): PlanConfig {
-  return PLANS[plan] || PLANS.basico;
+  return PLANS[plan] || PLANS.starter;
 }
 
 export function getSecurityGrade(score: number): { grade: string; color: string } {

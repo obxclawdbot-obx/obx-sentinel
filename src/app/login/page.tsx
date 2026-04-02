@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -43,8 +44,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
       <div className="w-full max-w-md p-8">
         <div className="text-center mb-8">
+          <Image src="/obx-logo.png" alt="OBX" width={48} height={48} className="mx-auto mb-3 rounded-lg" />
           <h1 className="text-3xl font-bold text-[#f0f0f0]">
-            🛡️ OBX <span className="text-[#00ff88]">Sentinel</span>
+            OBX <span className="text-[#00ff88]">Sentinel</span>
           </h1>
           <p className="text-[#888] mt-2">Monitorización de Ciberseguridad</p>
         </div>

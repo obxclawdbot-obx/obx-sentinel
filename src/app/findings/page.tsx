@@ -23,6 +23,14 @@ const severityBadge: Record<string, string> = {
   info: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
+const severityGlowClass: Record<string, string> = {
+  critical: "hover:shadow-[0_0_15px_rgba(239,68,68,0.1)]",
+  high: "hover:shadow-[0_0_15px_rgba(249,115,22,0.1)]",
+  medium: "",
+  low: "",
+  info: "",
+};
+
 const statusBadge: Record<string, string> = {
   open: "bg-red-500/10 text-red-500",
   in_progress: "bg-yellow-500/10 text-yellow-500",
@@ -36,6 +44,25 @@ const statusLabel: Record<string, string> = {
   resolved: "Resuelto",
   false_positive: "Falso positivo",
 };
+
+function SkeletonFindings() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="skeleton h-6 w-24 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="skeleton h-4 w-3/4" />
+              <div className="skeleton h-3 w-1/2" />
+            </div>
+            <div className="skeleton h-6 w-16 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function FindingsPage() {
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -64,11 +91,11 @@ export default function FindingsPage() {
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar />
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6">Hallazgos de seguridad</h1>
+      <main className="flex-1 p-8 bg-grid">
+        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6 animate-in">Hallazgos de seguridad</h1>
 
         {/* Filters */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 animate-in">
           <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="bg-[#111] border border-[#333] text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00ff88]">
             <option value="">Todas las severidades</option>
             <option value="critical">Crítica</option>
@@ -88,15 +115,19 @@ export default function FindingsPage() {
         </div>
 
         {loading ? (
-          <div className="animate-pulse text-[#888]">Cargando hallazgos...</div>
+          <SkeletonFindings />
         ) : findings.length === 0 ? (
-          <div className="bg-[#181818] border border-[#222] rounded-2xl p-12 text-center text-[#888]">
-            No se encontraron hallazgos con los filtros seleccionados.
+          <div className="bg-[#181818] border border-[#222] rounded-2xl p-12 text-center animate-in">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 text-[#333] mx-auto mb-3">
+              <circle cx="6.5" cy="6.5" r="4.5"/><path d="M10 10l4 4"/>
+            </svg>
+            <p className="text-[#888] mb-1">No se encontraron hallazgos.</p>
+            <p className="text-xs text-[#555]">Ajusta los filtros o lanza un nuevo escaneo.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 animate-in-delay-1">
             {findings.map(f => (
-              <div key={f.id} className="bg-[#181818] border border-[#222] rounded-2xl overflow-hidden">
+              <div key={f.id} className={`bg-[#181818] border border-[#222] rounded-2xl overflow-hidden card-hover ${severityGlowClass[f.severity] || ""}`}>
                 <div className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
                   <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${severityBadge[f.severity]}`}>
                     {f.severity.toUpperCase()} <span className="font-mono ml-1">{f.cvssScore.toFixed(1)}</span>
@@ -109,7 +140,7 @@ export default function FindingsPage() {
                     {statusLabel[f.status]}
                   </span>
                   <span className="text-xs text-[#555]">{new Date(f.detectedAt).toLocaleDateString("es-ES")}</span>
-                  <span className="text-[#555]">{expanded === f.id ? "▲" : "▼"}</span>
+                  <span className="text-[#555] transition-transform" style={{ transform: expanded === f.id ? "rotate(180deg)" : "none" }}>▼</span>
                 </div>
                 {expanded === f.id && (
                   <div className="px-6 py-4 border-t border-[#222] bg-[#111]">

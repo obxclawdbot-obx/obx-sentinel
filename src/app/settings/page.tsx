@@ -4,22 +4,38 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 
 const planFeatures: Record<string, { label: string; price: string; features: string[] }> = {
-  basico: {
-    label: "Básico",
-    price: "€99/mes",
-    features: ["5 activos", "2 escáneres (puertos + SSL)", "1 escaneo/semana", "30 días historial"],
+  starter: {
+    label: "Starter",
+    price: "€49/mes",
+    features: ["3 activos", "3 scanners", "Scan semanal", "30 días historial", "Soporte email"],
   },
   profesional: {
-    label: "Profesional",
-    price: "€199/mes",
-    features: ["25 activos", "4 escáneres completos", "5 escaneos/día", "90 días historial", "Informes PDF"],
+    label: "Professional",
+    price: "€149/mes",
+    features: ["15 activos", "10 scanners", "Scans diarios", "90 días historial", "Alertas email", "Informes PDF", "Soporte prioritario"],
   },
   enterprise: {
-    label: "Enterprise",
+    label: "Business",
     price: "€299/mes",
-    features: ["Activos ilimitados", "4 escáneres completos", "Escaneos ilimitados", "1 año historial", "PDF con logo", "Acceso API"],
+    features: ["Activos ilimitados", "10 scanners + compliance", "Scans cada 6h", "365 días historial", "Credenciales filtradas", "Reports con logo", "API access", "Soporte dedicado"],
   },
 };
+
+function SkeletonSettings() {
+  return (
+    <div className="space-y-6 max-w-3xl">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+          <div className="skeleton h-5 w-32 mb-4" />
+          <div className="space-y-3">
+            <div className="skeleton h-4 w-48" />
+            <div className="skeleton h-4 w-36" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
@@ -73,20 +89,20 @@ export default function SettingsPage() {
     }
   };
 
-  const currentPlan = user?.plan || "basico";
+  const currentPlan = user?.plan || "starter";
 
   return (
     <div className="flex min-h-screen bg-[#0a0a0a]">
       <Sidebar plan={currentPlan} />
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6">Configuración</h1>
+      <main className="flex-1 p-8 bg-grid">
+        <h1 className="text-2xl font-bold text-[#f0f0f0] mb-6 animate-in">Configuración</h1>
 
         {loading ? (
-          <div className="animate-pulse text-[#888]">Cargando...</div>
+          <SkeletonSettings />
         ) : (
           <div className="space-y-6 max-w-3xl">
             {/* Organization */}
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover animate-in">
               <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Organización</h2>
               <div className="space-y-3">
                 <div>
@@ -103,14 +119,14 @@ export default function SettingsPage() {
             </div>
 
             {/* Plans comparison */}
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover animate-in-delay-1">
               <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Planes disponibles</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Object.entries(planFeatures).map(([key, plan]) => (
-                  <div key={key} className={`rounded-xl p-5 border ${
+                  <div key={key} className={`rounded-xl p-5 border transition-all ${
                     key === currentPlan
-                      ? "border-[#00ff88] bg-[#00ff88]/5"
-                      : "border-[#333] bg-[#111]"
+                      ? "border-[#00ff88] bg-[#00ff88]/5 glow-green"
+                      : "border-[#333] bg-[#111] hover:border-[#444]"
                   }`}>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-[#f0f0f0]">{plan.label}</h3>
@@ -137,7 +153,7 @@ export default function SettingsPage() {
             </div>
 
             {/* User Info */}
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover animate-in-delay-2">
               <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Información de usuario</h2>
               <div className="space-y-3">
                 <div>
@@ -158,7 +174,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Change Password */}
-            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6">
+            <div className="bg-[#181818] border border-[#222] rounded-2xl p-6 card-hover animate-in-delay-3">
               <h2 className="text-lg font-semibold text-[#f0f0f0] mb-4">Cambiar contraseña</h2>
               {message && (
                 <div className={`mb-4 p-3 rounded-xl text-sm ${

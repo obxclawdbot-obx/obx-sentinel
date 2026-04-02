@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "", organizationName: "" });
@@ -35,7 +36,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#f0f0f0]">
-            🛡️ OBX <span className="text-[#00ff88]">Sentinel</span>
+            <Image src="/obx-logo.png" alt="OBX" width={48} height={48} className="mx-auto mb-3 rounded-lg" />
+            OBX <span className="text-[#00ff88]">Sentinel</span>
           </h1>
           <p className="text-[#888] mt-2">Crear cuenta</p>
         </div>

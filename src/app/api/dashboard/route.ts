@@ -57,7 +57,7 @@ export async function GET() {
     criticalFindings,
     highFindings,
     score,
-    plan: org?.plan || "basico",
+    plan: org?.plan || "starter",
     findingsBySeverity: findingsBySeverity.map((f: any) => ({ severity: f.severity, count: f._count })),
     findingsByStatus: findingsByStatus.map((f: any) => ({ status: f.status, count: f._count })),
     recentFindings: recentFindings.map((f: any) => ({

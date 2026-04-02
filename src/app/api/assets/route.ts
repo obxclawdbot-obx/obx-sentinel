@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   // Plan gating: check max assets
   const org = await prisma.organization.findUnique({ where: { id: orgId } });
-  const planConfig = getPlanConfig(org?.plan || "basico");
+  const planConfig = getPlanConfig(org?.plan || "starter");
   
   const currentCount = await prisma.asset.count({ where: { organizationId: orgId } });
   if (currentCount >= planConfig.maxAssets) {

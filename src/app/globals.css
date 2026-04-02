@@ -2,6 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Subtle grid background */
+.bg-grid {
+  background-image: radial-gradient(circle, #ffffff05 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glass card */
+.glass {
+  background: rgba(24, 24, 24, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Glow effect */
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+}
+
+/* Entrance animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+.animate-in-delay-1 {
+  animation: fadeInUp 0.4s ease-out 0.1s forwards;
+  opacity: 0;
+}
+.animate-in-delay-2 {
+  animation: fadeInUp 0.4s ease-out 0.2s forwards;
+  opacity: 0;
+}
+.animate-in-delay-3 {
+  animation: fadeInUp 0.4s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Card hover */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #181818 25%, #222222 50%, #181818 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Pulsing glow for low security scores */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); }
+}
+.pulse-glow-red {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlowOrange {
+  0%, 100% { box-shadow: 0 0 10px rgba(249, 115, 22, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(249, 115, 22, 0.4); }
+}
+.pulse-glow-orange {
+  animation: pulseGlowOrange 2s ease-in-out infinite;
+}
+
+/* Security score circle animation */
+@keyframes scoreReveal {
+  from { stroke-dashoffset: var(--circumference); }
+  to { stroke-dashoffset: var(--target-offset); }
+}
+
+/* Severity glow */
+.severity-glow-critical {
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.15);
+}
+.severity-glow-high {
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.15);
+}
+.severity-glow-medium {
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.12);
 }

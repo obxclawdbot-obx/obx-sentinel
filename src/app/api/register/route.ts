@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: organizationName,
         slug: `${slug}-${Date.now().toString(36)}`,
-        plan: "basico",
+        plan: "starter",
       },
     });
 
